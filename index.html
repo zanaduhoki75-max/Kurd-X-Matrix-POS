@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurd-X Matrix POS | سيستەمێ خەیالی</title>
+    <style>
+        :root {
+            --neon-green: #00ff41;
+            --dark-bg: #0a0a0a;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            overflow: hidden; /* بۆ هندێ وەک ئەپڵیکەیشن دیار بیت */
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Matrix Background Animation */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        /* Sidebar Customization */
+        nav {
+            width: 250px;
+            background: rgba(0, 0, 0, 0.8);
+            border-left: 1px solid var(--neon-green);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-item {
+            padding: 15px;
+            border: 1px solid var(--glass);
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .nav-item:hover {
+            background: var(--neon-green);
+            color: black;
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+
+        /* Main Dashboard */
+        main {
+            flex-grow: 1;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .product-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .product-item:hover {
+            border-color: var(--neon-green);
+        }
+
+        /* Cart/Receipt Section */
+        .cart-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .total-box {
+            font-size: 32px;
+            color: var(--neon-green);
+            text-align: center;
+            border-top: 2px solid var(--neon-green);
+            padding-top: 20px;
+        }
+
+        button.pay-btn {
+            background: var(--neon-green);
+            color: black;
+            border: none;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--neon-green);
+            color: black;
+            font-size: 12px;
+            padding: 2px 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix-bg"></canvas>
+
+<nav>
+    <div class="logo">KURD-X POS</div>
+    <div class="nav-item">کۆگا (Stock)</div>
+    <div class="nav-item">ڕاپۆرتێن مەزن</div>
+    <div class="nav-item">کاشێر</div>
+    <div class="nav-item">سێتینگ</div>
+</nav>
+
+<main>
+    <div class="card">
+        <h2 style="color: var(--neon-green);">لیستا کەلوپەلان</h2>
+        <div class="product-grid" id="products">
+            </div>
+    </div>
+
+    <div class="card cart-section">
+        <div>
+            <h2 style="color: var(--neon-green);">پسۆلا فرۆشتنێ</h2>
+            <div id="cart-items">
+                <p style="opacity: 0.5;">چ تشت نەهاتینە هەلبژارتن...</p>
+            </div>
+        </div>
+        <div class="total-box">
+            کۆم: <span id="total-price">0</span> IQD
+            <button class="pay-btn" onclick="processPayment()">بڕینا پسۆلێ (Execute)</button>
+        </div>
+    </div>
+</main>
+
+<div class="status-bar">
+    <span>SYSTEM: ONLINE</span>
+    <span>SERVER: KURDISTAN-HQ (STABLE)</span>
+    <span>ENCRYPTION: AES-256</span>
+</div>
+
+<script>
+    // Matrix Animation logic
+    const canvas = document.getElementById('matrix-bg');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const letters = "01010101010101010101010101010101";
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0F0";
+        ctx.font = fontSize + "px monospace";
+        for (let i = 0; i < drops.length; i++) {
+            const text = letters.charAt(Math.floor(Math.random() * letters.length));
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        }
+    }
+    setInterval(drawMatrix, 50);
+
+    // POS Logic
+    const products = [
+        { id: 1, name: "ئایفۆن ١٥", price: 1200000 },
+        { id: 2, name: "لاپتۆپ HP", price: 950000 },
+        { id: 3, name: "ساعت زیرەک", price: 75000 },
+        { id: 4, name: "کابل تیرا", price: 15000 },
+        { id: 5, name: "ماوس گەیمینگ", price: 45000 }
+    ];
+
+    const productGrid = document.getElementById('products');
+    products.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'product-item';
+        div.innerHTML = `<h4>${p.name}</h4><p>${p.price.toLocaleString()} IQD</p>`;
+        div.onclick = () => addToCart(p);
+        productGrid.appendChild(div);
+    });
+
+    let total = 0;
+    function addToCart(p) {
+        const cartItems = document.getElementById('cart-items');
+        if(total === 0) cartItems.innerHTML = '';
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.innerHTML = `<span>${p.name}</span> <span>${p.price.toLocaleString()}</span>`;
+        cartItems.appendChild(item);
+        total += p.price;
+        document.getElementById('total-price').innerText = total.toLocaleString();
+    }
+
+    function processPayment() {
+        alert("سیستەمێ مەزن یێ کار دکەت... داتایێن فرۆشتنێ بۆ سێرڤەرێ کوردستانێ هاتنە رەوانەکرن!");
+        location.reload();
+    }
+</script>
+
+</body>
+</html>
